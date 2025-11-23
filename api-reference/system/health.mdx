@@ -1,0 +1,265 @@
+---
+title: "Health Check"
+api: "GET /health"
+description: "Check the API server health and configuration status"
+---
+
+## Response
+
+<ResponseField name="status" type="string">
+  Health status of the API. Returns `"healthy"` when operational
+</ResponseField>
+
+<ResponseField name="timestamp" type="string">
+  ISO 8601 timestamp of the health check
+</ResponseField>
+
+<ResponseField name="activeSessions" type="number">
+  Number of currently active bridge sessions
+</ResponseField>
+
+<ResponseField name="fundingWalletConfigured" type="boolean">
+  Whether the funding wallet (CUSTOMWALLET) is properly configured
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl https://your-api.com/health
+```
+
+```javascript JavaScript
+const response = await fetch('https://your-api.com/health');
+const data = await response.json();
+
+if (data.status === 'healthy') {
+  console.log('✅ API is healthy');
+} else {
+  console.log('❌ API health check failed');
+}
+```
+
+```python Python
+import requests
+
+response = requests.get('https://your-api.com/health')
+data = response.json()
+
+if data['status'] == 'healthy':
+    print('✅ API is healthy')
+else:
+    print('❌ API health check failed')
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Healthy
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "activeSessions": 5,
+  "fundingWalletConfigured": true
+}
+```
+
+```json Wallet Not Configured
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "activeSessions": 0,
+  "fundingWalletConfigured": false
+}
+```
+
+</ResponseExample>
+
+## Use Cases
+
+### Simple Uptime Monitoring
+
+```javascript
+async function checkApiHealth() {
+  try {
+    const response = await fetch('https://your-api.com/health', {
+      timeout: 5000
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.status !== 'healthy') {
+      throw new Error('API not healthy');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return false;
+  }
+}
+```
+
+### Monitoring Dashboard
+
+```javascript
+async function getSystemStatus() {
+  const response = await fetch('https://your-api.com/health');
+  const health = await response.json();
+  
+  return {
+    isHealthy: health.status === 'healthy',
+    activeBridges: health.activeSessions,
+    walletConfigured: health.fundingWalletConfigured,
+    lastChecked: health.timestamp
+  };
+}
+
+// Check every 30 seconds
+setInterval(async () => {
+  const status = await getSystemStatus();
+  console.log('System Status:', status);
+  
+  if (!status.walletConfigured) {
+    console.warn('⚠️  Funding wallet not configured!');
+  }
+}, 30000);
+```
+
+### Load Balancer Health Check
+
+Configure your load balancer to use this endpoint:
+
+```yaml
+# Example: AWS ALB Target Group Health Check
+HealthCheckPath: /health
+HealthCheckIntervalSeconds: 30
+HealthCheckTimeoutSeconds: 5
+HealthyThresholdCount: 2
+UnhealthyThresholdCount: 3
+Matcher:
+  HttpCode: 200
+```
+
+### Kubernetes Liveness Probe
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bridge-api
+spec:
+  containers:
+  - name: api
+    image: stablef-bridge:latest
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 3000
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 3000
+      initialDelaySeconds: 10
+      periodSeconds: 5
+```
+
+### Pre-flight Check
+
+Check API health before creating bridge requests:
+
+```javascript
+async function createBridgeWithHealthCheck(bridgeParams) {
+  // Check health first
+  const healthResponse = await fetch('https://your-api.com/health');
+  const health = await healthResponse.json();
+  
+  if (health.status !== 'healthy') {
+    throw new Error('API is not healthy');
+  }
+  
+  if (!health.fundingWalletConfigured) {
+    throw new Error('Funding wallet not configured - bridges will fail');
+  }
+  
+  // Proceed with bridge creation
+  const bridgeResponse = await fetch('https://your-api.com/bridge/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bridgeParams)
+  });
+  
+  return bridgeResponse.json();
+}
+```
+
+## Status Indicators
+
+<AccordionGroup>
+  <Accordion title="fundingWalletConfigured: true" icon="circle-check">
+    ✅ The funding wallet is configured and the API can automatically fund smart wallets with ETH for gas fees.
+  </Accordion>
+  
+  <Accordion title="fundingWalletConfigured: false" icon="circle-xmark">
+    ❌ The funding wallet is NOT configured. Bridge requests will fail because smart wallets cannot be funded with ETH.
+    
+    **Action Required:** Set the `CUSTOMWALLET` environment variable and restart the server.
+  </Accordion>
+  
+  <Accordion title="activeSessions > 0" icon="clock">
+    Bridge requests are currently being processed. This is normal during operation.
+  </Accordion>
+  
+  <Accordion title="activeSessions = 0" icon="circle">
+    No active bridge sessions. This is normal when idle.
+  </Accordion>
+</AccordionGroup>
+
+## Response Codes
+
+| Code | Meaning |
+|------|---------|
+| 200 | API is operational |
+| 500 | Server error |
+| 503 | Service unavailable |
+
+<Info>
+  This endpoint always returns HTTP 200 even if `fundingWalletConfigured` is false. Check the response body for configuration status.
+</Info>
+
+## Alerting
+
+Set up alerts based on health check results:
+
+```javascript
+async function monitorHealth() {
+  const response = await fetch('https://your-api.com/health');
+  const health = await response.json();
+  
+  // Alert if wallet not configured
+  if (!health.fundingWalletConfigured) {
+    await sendAlert({
+      severity: 'critical',
+      message: 'Bridge API: Funding wallet not configured!',
+      details: health
+    });
+  }
+  
+  // Alert if too many active sessions (possible bottleneck)
+  if (health.activeSessions > 50) {
+    await sendAlert({
+      severity: 'warning',
+      message: `Bridge API: ${health.activeSessions} active sessions`,
+      details: health
+    });
+  }
+}
+```

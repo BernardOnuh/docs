@@ -1,33 +1,107 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: Introduction
+description: 'Welcome to StableF Bridge API - Cross-chain USDT bridging made simple'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.svg"
+  alt="Hero Dark"
+/>
 
-## Welcome
+## What is StableF Bridge?
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+StableF Bridge is a powerful API that enables seamless cross-chain USDT transfers using smart wallets and LayerZero protocol. Bridge USDT between Ethereum Sepolia and Base Sepolia testnets with automatic execution.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## Key Features
 
-## Authentication
+<CardGroup cols={2}>
+  <Card
+    title="Smart Wallet Integration"
+    icon="wallet"
+    iconType="duotone"
+  >
+    Automatic smart wallet creation for each bridge request using Coinbase CDP SDK
+  </Card>
+  <Card
+    title="LayerZero Protocol"
+    icon="bridge"
+    iconType="duotone"
+  >
+    Secure cross-chain messaging with LayerZero for reliable USDT transfers
+  </Card>
+  <Card
+    title="Automatic Execution"
+    icon="robot"
+    iconType="duotone"
+  >
+    Deposits are monitored and bridge transactions execute automatically
+  </Card>
+  <Card
+    title="Testnet Faucet"
+    icon="faucet"
+    iconType="duotone"
+  >
+    Built-in USDT faucet for easy testing without external dependencies
+  </Card>
+</CardGroup>
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+## How It Works
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```
+<Steps>
+  <Step title="Create Bridge Request">
+    Make a POST request to `/bridge/create` with your source chain, destination chain, and amount
+  </Step>
+  <Step title="Get Deposit Address">
+    Receive a unique smart wallet address to deposit your USDT
+  </Step>
+  <Step title="Send USDT">
+    Transfer USDT to the provided deposit address on the source chain
+  </Step>
+  <Step title="Automatic Bridge">
+    The system detects your deposit and automatically bridges to the destination
+  </Step>
+</Steps>
+
+## Supported Networks
+
+- **Ethereum Sepolia** (Testnet)
+- **Base Sepolia** (Testnet)
+
+## Quick Links
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get started in 5 minutes
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/introduction"
+  >
+    Explore the API endpoints
+  </Card>
+  <Card
+    title="Examples"
+    icon="brackets-curly"
+    href="/bridge/examples"
+  >
+    See code examples
+  </Card>
+  <Card
+    title="How It Works"
+    icon="circle-info"
+    href="/bridge/how-it-works"
+  >
+    Learn the technical details
+  </Card>
+</CardGroup>

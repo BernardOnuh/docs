@@ -1,0 +1,217 @@
+---
+title: "List All Sessions"
+api: "GET /bridge/sessions"
+description: "Get a list of all active bridge sessions"
+---
+
+## Response
+
+<ResponseField name="totalSessions" type="number">
+  Total number of active bridge sessions
+</ResponseField>
+
+<ResponseField name="sessions" type="array">
+  Array of bridge session objects
+  
+  <Expandable title="session object">
+    <ResponseField name="sessionId" type="string">
+      Unique identifier for the bridge session
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Current status: `pending_deposit`, `processing`, `completed`, or `failed`
+    </ResponseField>
+    
+    <ResponseField name="sourceChain" type="string">
+      Source blockchain network
+    </ResponseField>
+    
+    <ResponseField name="destinationChain" type="string">
+      Destination blockchain network
+    </ResponseField>
+    
+    <ResponseField name="amountUSDT" type="string">
+      Amount of USDT being bridged
+    </ResponseField>
+    
+    <ResponseField name="destinationWallet" type="string">
+      Destination wallet address
+    </ResponseField>
+    
+    <ResponseField name="depositAddress" type="string">
+      Smart wallet deposit address
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of creation
+    </ResponseField>
+    
+    <ResponseField name="txHash" type="string">
+      Transaction hash (if completed)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl https://your-api.com/bridge/sessions
+```
+
+```javascript JavaScript
+const response = await fetch('https://your-api.com/bridge/sessions');
+const data = await response.json();
+
+console.log(`Total sessions: ${data.totalSessions}`);
+data.sessions.forEach(session => {
+  console.log(`${session.sessionId}: ${session.status}`);
+});
+```
+
+```python Python
+import requests
+
+response = requests.get('https://your-api.com/bridge/sessions')
+data = response.json()
+
+print(f"Total sessions: {data['totalSessions']}")
+for session in data['sessions']:
+    print(f"{session['sessionId']}: {session['status']}")
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "totalSessions": 3,
+  "sessions": [
+    {
+      "sessionId": "bridge_1763875978517_cdvpbhg3a",
+      "status": "completed",
+      "sourceChain": "base-sepolia",
+      "destinationChain": "sepolia",
+      "amountUSDT": "10",
+      "destinationWallet": "0x22890dfAeD0667723fcD66e34FfB853b4F81f6bd",
+      "depositAddress": "0x1234567890123456789012345678901234567890",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "txHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+    },
+    {
+      "sessionId": "bridge_1763876574870_0hux3hw6c",
+      "status": "processing",
+      "sourceChain": "sepolia",
+      "destinationChain": "base-sepolia",
+      "amountUSDT": "25",
+      "destinationWallet": "0x9876543210987654321098765432109876543210",
+      "depositAddress": "0x0987654321098765432109876543210987654321",
+      "createdAt": "2024-01-01T12:10:00.000Z"
+    },
+    {
+      "sessionId": "bridge_1763876273201_9l7chl85l",
+      "status": "pending_deposit",
+      "sourceChain": "base-sepolia",
+      "destinationChain": "sepolia",
+      "amountUSDT": "5",
+      "destinationWallet": "0x5555555555555555555555555555555555555555",
+      "depositAddress": "0x6666666666666666666666666666666666666666",
+      "createdAt": "2024-01-01T12:05:00.000Z"
+    }
+  ]
+}
+```
+
+```json Empty Sessions
+{
+  "totalSessions": 0,
+  "sessions": []
+}
+```
+
+</ResponseExample>
+
+## Use Cases
+
+### Monitor All Active Bridges
+
+```javascript
+async function monitorAllBridges() {
+  const response = await fetch('https://your-api.com/bridge/sessions');
+  const data = await response.json();
+  
+  const pending = data.sessions.filter(s => s.status === 'pending_deposit');
+  const processing = data.sessions.filter(s => s.status === 'processing');
+  const completed = data.sessions.filter(s => s.status === 'completed');
+  const failed = data.sessions.filter(s => s.status === 'failed');
+  
+  console.log('📊 Bridge Statistics:');
+  console.log(`  Pending: ${pending.length}`);
+  console.log(`  Processing: ${processing.length}`);
+  console.log(`  Completed: ${completed.length}`);
+  console.log(`  Failed: ${failed.length}`);
+  
+  return { pending, processing, completed, failed };
+}
+```
+
+### Find Specific Session
+
+```javascript
+async function findSessionByWallet(walletAddress) {
+  const response = await fetch('https://your-api.com/bridge/sessions');
+  const data = await response.json();
+  
+  return data.sessions.filter(
+    s => s.destinationWallet.toLowerCase() === walletAddress.toLowerCase()
+  );
+}
+```
+
+### Calculate Total Volume
+
+```javascript
+async function calculateTotalVolume() {
+  const response = await fetch('https://your-api.com/bridge/sessions');
+  const data = await response.json();
+  
+  const totalVolume = data.sessions.reduce((sum, session) => {
+    return sum + parseFloat(session.amountUSDT);
+  }, 0);
+  
+  console.log(`Total USDT bridged: ${totalVolume} USDT`);
+  return totalVolume;
+}
+```
+
+## Notes
+
+<Info>
+  Sessions are stored in-memory and will be cleared when the server restarts. For production use, consider implementing persistent storage (database).
+</Info>
+
+<Warning>
+  This endpoint returns all sessions without pagination. For production with many sessions, implement pagination to avoid performance issues.
+</Warning>
+
+## Filtering Sessions
+
+While the API doesn't support filtering yet, you can filter results client-side:
+
+```javascript
+const response = await fetch('https://your-api.com/bridge/sessions');
+const data = await response.json();
+
+// Filter by status
+const completedSessions = data.sessions.filter(s => s.status === 'completed');
+
+// Filter by chain
+const baseToSepoliaBridges = data.sessions.filter(
+  s => s.sourceChain === 'base-sepolia' && s.destinationChain === 'sepolia'
+);
+
+// Filter by date
+const recentSessions = data.sessions.filter(
+  s => new Date(s.createdAt) > new Date(Date.now() - 3600000) // Last hour
+);
+```
